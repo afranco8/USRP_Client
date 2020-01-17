@@ -366,7 +366,7 @@ def rxAudioStream():
                             master.set(obj["tlv"]["ambe_mode"])
                         noTrace = False
                         logging.info(audio[:audio.find(b'\x00')].decode('ASCII'))
-                        connected_msg.set( "Connected to " + obj["last_tune"] )
+                        connected_msg.set( "Ligado a " + obj["last_tune"] )
                         selectTGByValue(obj["last_tune"])
                 else:
                     if audio[0] == TLV_TAG_SET_INFO:
@@ -620,7 +620,7 @@ def setRemoteTG( tg ):
             comma = ","
         sendRemoteControlCommandASCII(tgs)
         sendRemoteControlCommandASCII("txTg=0")
-        connected_msg.set( "Connected to ")
+        connected_msg.set( "Ligado a ")
         transmitButton.configure(state='disabled')
     else :
         sendRemoteControlCommandASCII("tgs=" + str(tg))
@@ -734,7 +734,7 @@ def connect():
     if regState == False:
         start()
     tg = getCurrentTG()
-    connected_msg.set( "Connected to " + getCurrentTGName() )
+    connected_msg.set( "Ligado a " + getCurrentTGName() )
 #    transmitButton.configure(state='normal')
     
     setRemoteNetwork(master.get())
@@ -825,7 +825,7 @@ def getValuesFromServer():
     #   subscriber_id.set(3113043)           #DMR Subscriber radio ID
     slot.set(2)                         #current slot
     listbox.selection_set(0)            #current TG
-    connected_msg.set("Connected to")    #current TG
+    connected_msg.set("Ligado a")    #current TG
     
     # get values from Analog_Bridge (vox enable, delay and threshold) (not yet: sp level, mic level, audio devices)
     getVoxData()                        #vox enable, delay and threshold
@@ -1050,7 +1050,7 @@ def makeLogFrame( parent ):
 def makeTransmitFrame(parent):
     global transmitButton
     transmitFrame = Frame(parent, pady = 5, padx = 5, bg = "white", bd = 1)
-    transmitButton = Button(transmitFrame, text="Transmit", command=transmit, width = 40, state='disabled')
+    transmitButton = Button(transmitFrame, text="PTT", command=transmit, width = 40, state='disabled')
     transmitButton.grid(column=1, row=1, sticky=W)
     return transmitFrame
 
@@ -1093,8 +1093,8 @@ def makeAppFrame( parent ):
 ###################################################################################
 def makeModeSettingsFrame( parent ):
     ypad = 4
-    dmrgroup = LabelFrame(parent, text="MODE", padx=5, pady=ypad, bg = "white")
-    whiteLabel(dmrgroup, "Mode").grid(column=1, row=1, sticky=W, padx = 5, pady = ypad)
+    dmrgroup = LabelFrame(parent, text="MODO", padx=5, pady=ypad, bg = "white")
+    whiteLabel(dmrgroup, "Modo").grid(column=1, row=1, sticky=W, padx = 5, pady = ypad)
     w = OptionMenu(dmrgroup, master, *servers)
     w.grid(column=2, row=1, sticky=W, padx = 5, pady = ypad)
 

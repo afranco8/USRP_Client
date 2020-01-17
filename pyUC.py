@@ -315,7 +315,7 @@ def rxAudioStream():
                     if keyup == False:
                         logging.info('End TX:   {} {} {} {} {:.2f}s'.format(call, rxslot, tg, loss, time() - start_time))
                         logList.see(logList.insert('', 'end', None, values=(
-                                                                            strftime(" %m/%d/%y", localtime(start_time)),
+                                                                            strftime(" %d/%m/%y", localtime(start_time)),
                                                                             strftime("%H:%M:%S", localtime(start_time)),
                                                                             call.ljust(10), rxslot, tg, loss, '{:.2f}s'.format(time() - start_time))))
                         root.after(1000, logList.yview_moveto, 1)
@@ -835,7 +835,7 @@ def getValuesFromServer():
     bdfolder = pathlib.Path(__file__).parent
     url = 'https://ham-digital.org/status/users.json'
     urllib.request.urlretrieve(url, bdfolder/'users.json')
-    messagebox.showinfo("Database Update", "Update complete!")
+    messagebox.showinfo("Database Update", "Update completo!")
 
 ###################################################################################
 # Update server data state to match GUI values
@@ -946,9 +946,9 @@ def tgDialog():
 ###################################################################################
 def makeModeFrame( parent ):
     modeFrame = LabelFrame(parent, text = "Server", pady = 5, padx = 5, bg = "white", bd = 1, relief = SUNKEN)
-    ttk.Button(modeFrame, text="Read", command=getValuesFromServer).grid(column=1, row=1, sticky=W)
-    ttk.Button(modeFrame, text="Write", command=sendValuesToServer).grid(column=1, row=2, sticky=W)
-    ttk.Button(modeFrame, text="Update DB", command=updatedb).grid(column=1, row=3, sticky=W)
+    ttk.Button(modeFrame, text="Ler", command=getValuesFromServer).grid(column=1, row=1, sticky=W)
+    ttk.Button(modeFrame, text="Escrever", command=sendValuesToServer).grid(column=1, row=2, sticky=W)
+    ttk.Button(modeFrame, text="Atualizar BD", command=updatedb).grid(column=1, row=3, sticky=W)
     return modeFrame
 
 ###################################################################################
@@ -1029,7 +1029,7 @@ def makeLogFrame( parent ):
     logList = ttk.Treeview(logFrame)
     logList.grid(column=1, row=2, sticky=W, columnspan=5)
     
-    cols = ('Date', 'Time', 'Call', 'Name', 'Slot', 'TG', 'Loss', 'Duration')
+    cols = ('Data', 'Hora', 'Indicativo', 'Nome', 'Slot', 'TG', 'Perda', 'Duração')
     widths = [85, 85, 85, 80, 55, 150, 70, 95]
     logList.config(columns=cols)
     logList.column("#0", width=1 )
@@ -1123,9 +1123,9 @@ def makeVoxSettingsFrame( parent ):
 ###################################################################################
 def makeIPSettingsFrame( parent ):
     ypad = 4
-    ipSettings = LabelFrame(parent, text="Network", padx=5, pady = ypad, bg = "white")
+    ipSettings = LabelFrame(parent, text="Rede", padx=5, pady = ypad, bg = "white")
     Checkbutton(ipSettings, text = "Loopback", variable=loopback, command=lambda: cb(loopback), background = "white").grid(column=1, row=1, sticky=W)
-    whiteLabel(ipSettings, "IP Address").grid(column=1, row=2, sticky=W, padx = 5, pady = ypad)
+    whiteLabel(ipSettings, "Endereço IP").grid(column=1, row=2, sticky=W, padx = 5, pady = ypad)
     Entry(ipSettings, width = 20, textvariable = ip_address).grid(column=2, row=2, pady = ypad)
     return ipSettings
 
@@ -1283,13 +1283,13 @@ except:
 
 servers = sorted(talk_groups.keys())
 master = makeTkVar(StringVar, defaultServer, masterChanged)
-connected_msg = makeTkVar(StringVar, "Connected to")
+connected_msg = makeTkVar(StringVar, "Ligado a")
 current_tx_value = makeTkVar(StringVar, my_call)
 
 # Add each frame to the "notebook" (tabs)
-nb.add(makeAppFrame( nb ), text='Main')
-nb.add(makeSettingsFrame( nb ), text='Settings')
-nb.add(makeAboutFrame( nb ), text='About')
+nb.add(makeAppFrame( nb ), text='Menu')
+nb.add(makeSettingsFrame( nb ), text='Definições')
+nb.add(makeAboutFrame( nb ), text='Sobre')
 nb.grid(column=1, row=1)
 
 # Create the other frames

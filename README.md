@@ -11,8 +11,8 @@ Os utilizadores podem:
  - Ver o log de estações que transmitiram na sessão
  - Ver a imagem de perfil definida pelos operadores em QRZ.com
 
-## Instalação
-Download e unzip https://github.com/DVSwitch/USRP_Client/archive/master.zip
+## Instalação - Versão Portuguesa
+Download e unzip https://github.com/afranco8/USRP_Client/archive/master-pt.zip
 
 Instruções de instalação:
 

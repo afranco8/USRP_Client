@@ -319,7 +319,7 @@ def rxAudioStream():
                         logList.see(logList.insert('', 'end', None, values=(
                                                                             strftime(" %d/%m/%y", localtime(start_time)),
                                                                             strftime("%H:%M:%S", localtime(start_time)),
-                                                                            call.ljust(10), rxslot, tg, loss, '{:.2f}s'.format(time() - start_time))))
+                                                                            call.ljust(10), nome, rxslot, tg, loss, '{:.2f}s'.format(time() - start_time))))
                         root.after(1000, logList.yview_moveto, 1)
                         current_tx_value.set(my_call)
                         ipc_queue.put(empty_photo)

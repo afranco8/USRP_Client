@@ -1,47 +1,50 @@
-
 # USRP_Client (pyUC)
 
-## Introduction
-The pyUC python application is a GUI front end for accessing ham radio digital networks from your PC.  It is the front end app for the DVSwitch suite of software and connects to the Analog_Bridge component.
-## Features
-The user can:
+## Introdução
+O pyUC é uma aplicação para aceder a redes digitais com licença válida de Radioamador através do computador. É a aplicação front-end do pacote de software DVSwitch com ligação ao componente Analog_Bridge.
+## Funções
+Os utilizadores podem:
 
- - Select digital network
- - Select "talk group" or reflector from a list
- - Transmit and receive to the network using their speakers and mic
- - Record a list of stations received in the session
- - See pictures of the hams from QRZ.com
+ - Seleccionar modos digitais (DMR/YSF/NXDN/P25/D-STAR)
+ - Seleccionar grupos de conversação ou reflectores de uma lista
+ - Transmitir e receber pelo micro/coluna do PC
+ - Ver o log de estações que transmitiram na sessão
+ - Ver a imagem de perfil definida pelos operadores em QRZ.com
 
-## Installation
-Download and unzip https://github.com/DVSwitch/USRP_Client/archive/master.zip
+## Instalação
+Download e unzip https://github.com/DVSwitch/USRP_Client/archive/master.zip
 
-Install instructions by platform:
+Instruções de instalação:
 
 - Windows 10
 
-    Use Python 3.7 from the Microsoft Store  
-    Open a command prompt  
+    Fazer o download da versão Python 3.7 da Microsoft Store  
+    
+    ## Método 1
+    Abrir a linha de comandos  
     **python -m pip install --upgrade pip**  
-    Download PyAudio from https://www.lfd.uci.edu/~gohlke/pythonlibs/ for your version (32 or 64 bit)
+    Download PyAudio de https://www.lfd.uci.edu/~gohlke/pythonlibs/ para a versão no seu computador (32 or 64 bit)
  
     **pip install PyAudio-0.2.11-cp37-cp37m-win_XXX.whl   
     pip install bs4  
     pip install Pillow  
     pip install requests**  
-    Edit pyUC.ini
+    Editar pyUC.ini
     
-    If you get an error about MSVCP140.DLL, then you will need to install the MSVC C++ runtime library.  
-    Get it from: https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads 
-    
-    - Added Download.bat file to download and install all required libs for USRP Client use. Tested on Windows 10 64
- 
-- Linux (Tested on a Raspberry Pi running Buster and Linux Mint 19)
+    ## Método 2
+    Uitilizar o ficheiro Download.bat para fazer automaticamente o download e instalação das librarys necessárias para utilização do USRP Client. Testado em Windows 10 64
+  
+    Se ocorrer um erro relacionado com MSVCP140.DLL durante a execução do USRP Client, terá de instalar a biblioteca necessária -> MSVC C++ runtime library
+    Download: https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
 
-    Open a command prompt  
+ 
+- Linux (Testedo em Raspberry Pi a correr Buster e Linux Mint 19)
+
+    Abrir o terminal	
     **sudo apt-get install python3-pyaudio  
     sudo apt-get install portaudio19-dev  
     sudo apt-get install python3-pil.imagetk**  
-    Edit pyUC.ini
+    Editar pyUC.ini
 
 - Mac
 
@@ -50,7 +53,7 @@ Install instructions by platform:
     brew install portaudio  
     pip3 install pyaudio  
     pip3 install bs4 Pillow requests**  
-    Edit pyUC.ini
+    Editar pyUC.ini
 
 ## Contributing
 We encourage others to submit pull request to this repository.  We only ask that you submit the pull request on the development branch.  Your pull will be reviewed and merged into the master branch.

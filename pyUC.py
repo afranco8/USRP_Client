@@ -831,7 +831,7 @@ def getValuesFromServer():
     mic_vol.set(50)                      #microphone level
     sp_vol.set(50)                       #speaker level
     
-    def updatedb():
+def updatedb():
     bdfolder = pathlib.Path(__file__).parent
     url = 'https://ham-digital.org/status/users.json'
     urllib.request.urlretrieve(url, bdfolder/'users.json')

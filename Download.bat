@@ -24,7 +24,8 @@ pip install Pillow
 pip install requests
 echo ""
 echo "----------------------------------------------------------------------------------"
-echo "Installation complete. You should now edit pyUC.ini before using USRP Client"
-
+echo "Installation complete. You should now edit pyUC.ini before using USRP Client. I'll open that for your..."
+Timeout /t 5
+Start notepad "pyUC.ini"
 Timeout /t 5
 exit

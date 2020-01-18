@@ -33,7 +33,7 @@ Install instructions by platform:
      ## Method 2
     Use Python 3.7 from the Microsoft Store
     
-    Run Download.bat file to download and install all required libs for USRP Client use. Tested on Windows 10 64
+    Run Download bat (Download32.bat for 32bit or Download64.bat for 64bit installation) to download and install all required libs for USRP Client use. Tested on Windows 10
     
     
     If you get an error about MSVCP140.DLL, then you will need to install the MSVC C++ runtime library.  

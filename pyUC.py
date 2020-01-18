@@ -889,7 +889,7 @@ def showPTTState(flag):
             _date = strftime("%d/%m/%y", localtime(time()))
             _time = strftime("%H:%M:%S", localtime(time()))
             _duration = '{:.2f}'.format(time() - tx_start_time)
-            logList.see(logList.insert('', 'end', None, values=(_date, _time, my_call, nome, str(slot.get()), str(getCurrentTGName()), '0.00%', str(_duration)+'s')))
+            logList.see(logList.insert('', 'end', None, values=(_date, _time, my_call, '', str(slot.get()), str(getCurrentTGName()), '0.00%', str(_duration)+'s')))
             current_tx_value.set(my_call)
         ipc_queue.put(empty_photo)  # clear the pic when in idle state
         logging.info("PTT OFF")

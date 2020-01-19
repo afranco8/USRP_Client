@@ -60,6 +60,7 @@ Install instructions by platform:
 ## First Run
 After changing the pyUC.ini settings with you details, click on Settings -> Update BD and wait to download the User database so you cann see the operator names in the log.
 Thats the only change from the authors original script.
+All credits go to N4IRR & N4IRS
 
 ## Contributing
 We encourage others to submit pull request to this repository.  We only ask that you submit the pull request on the development branch.  Your pull will be reviewed and merged into the master branch.

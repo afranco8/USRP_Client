@@ -39,7 +39,6 @@ Instruções de instalação:
     Se ocorrer um erro relacionado com MSVCP140.DLL durante a execução do USRP Client, terá de instalar a biblioteca necessária -> MSVC C++ runtime library
     Download: https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
 
- 
 - Linux (Testedo em Raspberry Pi a correr Buster e Linux Mint 19)
 
     Abrir o terminal	
@@ -56,6 +55,12 @@ Instruções de instalação:
     pip3 install pyaudio  
     pip3 install bs4 Pillow requests**  
     Editar pyUC.ini
+
+## Primeira execução
+
+Na primeira execução, é recomendado ir ao separador Definições -> Atualizar BD para fazer o download da base de dados mundial e visualizar no log o nome dos operadores com ID DMR.
+Esta é a única alteração realizada face ao script original dos autores.
+Todos os créditos para N4IRR e N4IRS
 
 ## Contributing
 We encourage others to submit pull request to this repository.  We only ask that you submit the pull request on the development branch.  Your pull will be reviewed and merged into the master branch.

@@ -35,6 +35,8 @@ import logging
 import webbrowser
 import os
 import io
+import urllib
+import pathlib
 import base64
 import urllib.request
 import queue
@@ -282,6 +284,7 @@ def rxAudioStream():
     start_time = time()
     call = ''
     tg = ''
+    nome = ''
     loss = '0.00%'
     rxslot = '0'
     state = None
@@ -313,9 +316,9 @@ def rxAudioStream():
                     if keyup:
                         start_time = time()
                     if keyup == False:
-                        logging.info('End TX:   {} {} {} {} {:.2f}s'.format(call, rxslot, tg, loss, time() - start_time))
+                        logging.info('End TX:   {} {} {} {} {:.2f}s'.format(call, nome, rxslot, tg, loss, time() - start_time))
                         logList.see(logList.insert('', 'end', None, values=(
-                                                                            strftime(" %m/%d/%y", localtime(start_time)),
+                                                                            strftime(" %d/%m/%y", localtime(start_time)),
                                                                             strftime("%H:%M:%S", localtime(start_time)),
                                                                             call.ljust(10), rxslot, tg, loss, '{:.2f}s'.format(time() - start_time))))
                         root.after(1000, logList.yview_moveto, 1)
@@ -381,8 +384,15 @@ def rxAudioStream():
                         for item in talk_groups[listName]:
                             if item[1] == str(tg):
                                 tg = item[0]    # Found the TG number in the list, so we can use its friendly name
-                        current_tx_value.set('{} -> {}'.format(call, tg))
-                        logging.info('Begin TX: {} {} {} {}'.format(call, rxslot, tg, mode))
+                        bdfolder = pathlib.Path(__file__).parent
+                        with open(bdfolder/'users.json') as json_data:
+                            data3 = json.load(json_data)
+                        nome = ''   
+                        for y in data3['users']:
+                            if call in y['callsign']:
+                                nome = str(y['name'])
+                        current_tx_value.set('RX: {} {} -> {}'.format(nome, call, tg))   
+                        logging.info('Begin TX: {} {} {} {} {}'.format(call, nome, rxslot, tg, mode))
                         transmit_enable = False # Transmission from network will disable local transmit
                         if call.isdigit() == False:
                             html_queue.put(call)
@@ -823,6 +833,12 @@ def getValuesFromServer():
     dongle_mode.set(1)                   #dongle mode enable
     mic_vol.set(50)                      #microphone level
     sp_vol.set(50)                       #speaker level
+    
+def updatedb():
+    bdfolder = pathlib.Path(__file__).parent
+    url = 'https://ham-digital.org/status/users.json'
+    urllib.request.urlretrieve(url, bdfolder/'users.json')
+    messagebox.showinfo("Database Update", "Update complete!")
 
 ###################################################################################
 # Update server data state to match GUI values
@@ -845,7 +861,7 @@ def sendValuesToServer():
 ###################################################################################
 # Toggle PTT and display new state
 ###################################################################################
-def transmit():
+def transmit(event=None):
     global ptt
     
     if (transmit_enable == False) and (ptt == False):  # Do not allow transmit key if rx is active
@@ -871,10 +887,10 @@ def showPTTState(flag):
     else:
         transmitButton.configure(highlightbackground='white')
         if flag == 1:
-            _date = strftime("%m/%d/%y", localtime(time()))
+            _date = strftime("%d/%m/%y", localtime(time()))
             _time = strftime("%H:%M:%S", localtime(time()))
             _duration = '{:.2f}'.format(time() - tx_start_time)
-            logList.see(logList.insert('', 'end', None, values=(_date, _time, my_call, str(slot.get()), str(getCurrentTGName()), '0.00%', str(_duration)+'s')))
+            logList.see(logList.insert('', 'end', None, values=(_date, _time, my_call, '', str(slot.get()), str(getCurrentTGName()), '0.00%', str(_duration)+'s')))
             current_tx_value.set(my_call)
         ipc_queue.put(empty_photo)  # clear the pic when in idle state
         logging.info("PTT OFF")
@@ -935,6 +951,7 @@ def makeModeFrame( parent ):
     modeFrame = LabelFrame(parent, text = "Server", pady = 5, padx = 5, bg = "white", bd = 1, relief = SUNKEN)
     ttk.Button(modeFrame, text="Read", command=getValuesFromServer).grid(column=1, row=1, sticky=W)
     ttk.Button(modeFrame, text="Write", command=sendValuesToServer).grid(column=1, row=2, sticky=W)
+    ttk.Button(modeFrame, text="Update DB", command=updatedb).grid(column=1, row=3, sticky=W)
     return modeFrame
 
 ###################################################################################
@@ -1015,8 +1032,8 @@ def makeLogFrame( parent ):
     logList = ttk.Treeview(logFrame)
     logList.grid(column=1, row=2, sticky=W, columnspan=5)
     
-    cols = ('Date', 'Time', 'Call', 'Slot', 'TG', 'Loss', 'Duration')
-    widths = [85, 85, 80, 55, 150, 70, 95]
+    cols = ('Date', 'Time', 'Call', 'Name', 'Slot', 'TG', 'Loss', 'Duration')
+    widths = [85, 85, 85, 80, 55, 150, 70, 95]
     logList.config(columns=cols)
     logList.column("#0", width=1 )
     i = 0
@@ -1169,7 +1186,7 @@ def update_clock(obj):
 #
 ###################################################################################
 def makeStatusBar( parent ):
-    w = 22
+    w = 32
     statusBar = Frame(parent, pady = 5, padx = 5)
     Label(statusBar, textvariable=connected_msg, anchor=W, width = w).grid(column=1, row=1, sticky=W)
     Label(statusBar, textvariable=current_tx_value, anchor=CENTER, width = w).grid(column=2, row=1, sticky=N)
@@ -1222,7 +1239,7 @@ def on_closing():
 root = Tk()
 root.title("USRP Client")
 root.resizable(width=FALSE, height=FALSE)
-
+root.bind('<Control_L>', transmit)
 nb = ttk.Notebook(root)     # A tabbed interface container
 
 # Load data from the config file
@@ -1296,4 +1313,3 @@ start()         # Begin the handshake with AB (register)
 
 root.protocol("WM_DELETE_WINDOW", on_closing)
 root.mainloop()
-

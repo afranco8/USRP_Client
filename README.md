@@ -32,7 +32,9 @@ Instruções de instalação:
     Editar pyUC.ini
     
     ## Método 2
-    Uitilizar o ficheiro Download.bat para fazer automaticamente o download e instalação das librarys necessárias para utilização do USRP Client. Testado em Windows 10 64
+    Fazer o download da versão Python 3.7 da Microsoft Store 
+    
+    Uitilizar o ficheiro Download.bat (Download32.bat para instalação 32bit ou Download64.bat para instalação 64bit) para fazer automaticamente o download e instalação das librarys necessárias para utilização do USRP Client. Testado em Windows 10
   
     Se ocorrer um erro relacionado com MSVCP140.DLL durante a execução do USRP Client, terá de instalar a biblioteca necessária -> MSVC C++ runtime library
     Download: https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads

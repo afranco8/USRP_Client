@@ -316,7 +316,7 @@ def rxAudioStream():
                     if keyup:
                         start_time = time()
                     if keyup == False:
-                        logging.info('End TX:   {} {} {} {} {:.2f}s'.format(call, nome, rxslot, tg, loss, time() - start_time))
+                        logging.info('End TX:  {} {} {} {} {} {:.2f}s'.format(call, nome, rxslot, tg, loss, time() - start_time))
                         logList.see(logList.insert('', 'end', None, values=(
                                                                             strftime(" %d/%m/%y", localtime(start_time)),
                                                                             strftime("%H:%M:%S", localtime(start_time)),
@@ -1313,4 +1313,3 @@ start()         # Begin the handshake with AB (register)
 
 root.protocol("WM_DELETE_WINDOW", on_closing)
 root.mainloop()
-

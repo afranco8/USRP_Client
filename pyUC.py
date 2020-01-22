@@ -879,13 +879,13 @@ def transmit():
 def showPTTState(flag):
     global tx_start_time
     if ptt:
-        transmitButton.configure(highlightbackground='red')
+        transmitButton.configure(bg='red')
         tx_start_time = time()
         current_tx_value.set('{} -> {}'.format(my_call, getCurrentTG()))
         html_queue.put(my_call)     # Show my own pic when I transmit
         logging.info("PTT ON")
     else:
-        transmitButton.configure(highlightbackground='white')
+        transmitButton.configure(bg='white')
         if flag == 1:
             _date = strftime("%d/%m/%y", localtime(time()))
             _time = strftime("%H:%M:%S", localtime(time()))

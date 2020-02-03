@@ -30,16 +30,19 @@ import shlex
 import configparser, traceback
 import pyaudio
 import audioop
+import pathlib
 import json
 import logging
 import webbrowser
 import os
 import io
-import urllib
-import pathlib
+from datetime import datetime
 import base64
 import urllib.request
 import queue
+import urllib
+from requests.auth import HTTPBasicAuth
+from os import startfile
 from pathlib import Path
 
 UC_VERSION = "1.1.0"
@@ -95,11 +98,11 @@ ptt = False                         # Current ptt state
 tx_start_time = 0                   # TX timer
 done = False                        # Thread stop flag
 transmit_enable = True              # Make sure that UC is half duplex
-
 listbox = None                      # tk object (talkgroup)
 transmitButton = None               # tk object
 logList = None                      # tk object
-
+call = ''
+nome = ''
 ###################################################################################
 # HTML/QRZ import libraries
 try:
@@ -122,13 +125,13 @@ def html_thread():
     while done == False:
         try:
             callsign = html_queue.get(0)        # wait forever for a message to be placed in the queue (a callsign)
-            photo = getQRZImage( callsign )     # lookup the call and return an image     
+            photo = getQRZImage( callsign )     # lookup the call and return an image
             ipc_queue.put(("photo", callsign, photo))
         except queue.Empty:
             pass
         sleep(0.1)
 
-# Return the URL of an image associated with the callsign.  The URL may be cached or scraped from QRZ    
+# Return the URL of an image associated with the callsign.  The URL may be cached or scraped from QRZ
 def getImgUrl( callsign ):
     img = ""
     if callsign in qrz_cache:
@@ -137,7 +140,7 @@ def getImgUrl( callsign ):
     # specify the url
     quote_page = 'https://qrz.com/lookup/' + callsign
 
-    # query the website and return the html to the variable ‘page’
+    # query the website and return the html to the variable â€˜pageâ€™
     page = urlopen(quote_page).read()
 
     # parse the html using beautiful soup and store in variable `soup`
@@ -148,7 +151,9 @@ def getImgUrl( callsign ):
         pass
     qrz_cache[callsign] = {'url' : img}
     return img
+#########################################################
 
+############################################################
 # Given a URL, download the image from the web and return it.
 def getQRZImage( callsign ):
     photo = ""              # If not found, this will be returned (causes the image to blank out)
@@ -159,7 +164,7 @@ def getQRZImage( callsign ):
                 return qrz_cache[callsign]['image']
             resp = requests.get(image_url, stream=True).raw
             image = Image.open(resp)
-            image.thumbnail((170,110), Image.LANCZOS)
+            image.thumbnail((140,80), Image.LANCZOS)
             photo = ImageTk.PhotoImage(image)
             qrz_cache[callsign]['image'] = photo
     return photo
@@ -183,21 +188,21 @@ logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 # Manage a popup dialog for on the fly TGs
 ###################################################################################
 class MyDialog:
-    
+
     def __init__(self, parent):
-        
+
         top = self.top = Toplevel(parent)
-        
+
         Label(top, text="Talk Group").pack()
-        
+
         self.e = Entry(top)
         self.e.pack(padx=5)
-        
+
         b = Button(top, text="OK", command=self.ok)
         b.pack(pady=5)
-    
+
     def ok(self):
-        
+
         logging.info( "value is %s", self.e.get() )
         item = self.e.get()
         if len(item):
@@ -205,6 +210,62 @@ class MyDialog:
             talk_groups[mode].append((item, item))
             fillTalkgroupList(master.get())
         self.top.destroy()
+
+class addDialog:
+
+    def __init__(self, parent):
+
+        top = self.top = Toplevel(parent)
+
+        Label(top, text="Talkgroup").pack()
+
+        self.t = Entry(top)
+        self.t.pack(padx=5)
+
+        b = Button(top, text="OK", command=self.ok)
+        b.pack(pady=5)
+
+    def ok(self):
+        data = "talkgroup=" + str(self.t.get()) + "&timeslot=0"
+        header = {'Content-Length': str(len(data)),
+                  'Content-Type': 'application/x-www-form-urlencoded'
+                  }
+        value = requests.post("https://api.brandmeister.network/v1.0/repeater/talkgroup/?action=ADD&id=" + str(repeater_id.get()),
+                              data=data, auth=HTTPBasicAuth(current_api.get(), ''), headers=header)
+        self.top.destroy()
+        messagebox.showinfo("Talkgroup", "Talkgroup Added!")
+
+def openweb():
+    webbrowser.open('https://brandmeister.network/?page=hotspot&id=' + str(repeater_id.get()))
+
+def dropcall():
+    value = requests.post(
+        "https://api.brandmeister.network/v1.0/repeater/setRepeaterDbus.php?action=dropCallRoute&slot=0&q=" + str(repeater_id.get()),
+        auth=HTTPBasicAuth(current_api.get(), ''))
+class remDialog:
+
+    def __init__(self, parent):
+
+        top = self.top = Toplevel(parent)
+
+        Label(top, text="Talkgroup").pack()
+
+        self.t = Entry(top)
+        self.t.pack(padx=5)
+
+        b = Button(top, text="OK", command=self.ok)
+        b.pack(pady=5)
+
+    def ok(self):
+        data = "talkgroup=" + str(self.t.get()) + "&timeslot=0"
+
+        header = {'Content-Length': str(len(data)),
+                  'Content-Type': 'application/x-www-form-urlencoded'
+                  }
+        value = requests.post("https://api.brandmeister.network/v1.0/repeater/talkgroup/?action=DEL&id=" + str(repeater_id.get()),
+                              data=data, auth=HTTPBasicAuth(current_api.get(), ''), headers=header)
+        self.top.destroy()
+        messagebox.showinfo("Talkgroup", "Talkgroup Removed!")
 
 ###################################################################################
 # Open the UDP socket for TX and RX
@@ -251,6 +312,8 @@ def rxAudioStream():
     global noTrace
     global regState
     global transmit_enable
+    global nome
+    global call
     logging.info('Start rx audio thread')
     USRP = bytes("USRP", 'ASCII')
     REG = bytes("REG:", 'ASCII')
@@ -263,7 +326,7 @@ def rxAudioStream():
     CHUNK = 160
     CHANNELS = 1
     RATE = SAMPLE_RATE
-    
+
     try:
         stream = p.open(format=FORMAT,
                         channels = CHANNELS,
@@ -282,12 +345,13 @@ def rxAudioStream():
 
     lastKey = -1
     start_time = time()
-    call = ''
+
     tg = ''
-    nome = ''
+
     loss = '0.00%'
     rxslot = '0'
     state = None
+
     while done == False:
         soundData, addr = udp.recvfrom(1024)
         if addr[0] != ip_address.get():
@@ -316,13 +380,14 @@ def rxAudioStream():
                     if keyup:
                         start_time = time()
                     if keyup == False:
-                        logging.info('End TX:  {} {} {} {} {} {:.2f}s'.format(call, nome, rxslot, tg, loss, time() - start_time))
+                        logging.info('End TX:   {} {} {} {:.2f}s'.format(call, rxslot, tg, time() - start_time))
                         logList.see(logList.insert('', 'end', None, values=(
                                                                             strftime(" %d/%m/%y", localtime(start_time)),
                                                                             strftime("%H:%M:%S", localtime(start_time)),
-                                                                            call.ljust(10), nome, rxslot, tg, loss, '{:.2f}s'.format(time() - start_time))))
+                                                                            call.ljust(10), nome, rxslot, tg, '{:.2f}s'.format(time() - start_time))))
                         root.after(1000, logList.yview_moveto, 1)
                         current_tx_value.set(my_call)
+
                         ipc_queue.put(empty_photo)
                         transmit_enable = True  # Idle state, allow local transmit
                 lastKey = keyup
@@ -387,16 +452,21 @@ def rxAudioStream():
                         bdfolder = pathlib.Path(__file__).parent
                         with open(bdfolder/'users.json') as json_data:
                             data3 = json.load(json_data)
-                        nome = ''   
+                            nome = ''
+
                         for y in data3['users']:
                             if call in y['callsign']:
                                 nome = str(y['name'])
-                        current_tx_value.set('RX: {} {} -> {}'.format(nome, call, tg))   
+                        current_tx_value.set('RX: {} {} -> {}'.format(nome, call, tg))
+
+
                         logging.info('Begin TX: {} {} {} {} {}'.format(call, nome, rxslot, tg, mode))
+
+
                         transmit_enable = False # Transmission from network will disable local transmit
                         if call.isdigit() == False:
                             html_queue.put(call)
-                        if ((rxcc  & 0x80) and (rid > 10000)): 
+                        if ((rxcc  & 0x80) and (rid > 10000)):
 #                            logging.info('rid {} ctg {}'.format(rid, getCurrentTG()))
                             # a dial string with a pound is a private call, see if the current TG matches
                             privateTG = str(rid) + '#'
@@ -409,10 +479,11 @@ def rxAudioStream():
             elif (type == USRP_TYPE_PING):
 #                logging.debug(audio[:audio.find('\x00')])
                 pass
-    
+
         else:
 #            logging.info(soundData, len(soundData))
             pass
+
 
 #    udp.close()
 
@@ -428,7 +499,7 @@ def txAudioStream():
     CHANNELS = 1                                        # mono
     RATE = SAMPLE_RATE
     state = None                                        # resample state between fragments
-    
+
     try:
         stream = p.open(format=FORMAT,
                         channels = CHANNELS,
@@ -610,7 +681,7 @@ def setMode( mode ):
 # Tell AB to select the passed tg
 ###################################################################################
 def setRemoteTG( tg ):
-    
+
     items = map(int, listbox.curselection())
     if len(list(items)) > 1:
         tgs="tgs="
@@ -718,7 +789,7 @@ def findTG(tg):
             return itemNum
         itemNum = itemNum+1
     return -1
-    
+
 ###################################################################################
 #
 ###################################################################################
@@ -735,9 +806,9 @@ def connect():
     if regState == False:
         start()
     tg = getCurrentTG()
-    connected_msg.set( "Connected to " + getCurrentTGName() )
+    connected_msg.set( "Conected to " + getCurrentTGName() )
 #    transmitButton.configure(state='normal')
-    
+
     setRemoteNetwork(master.get())
     setRemoteTS(slot.get())
     setRemoteTG(tg)
@@ -774,14 +845,14 @@ def toast_fade_away():
         toast_frame.after(100, toast_fade_away)
     else:
         toast_frame.destroy()
- 
+
 def process_queue():
     try:
         msg = ipc_queue.get(0)      # wait forever for a message to be placed in the queue
         if msg[0] == "toast":   # a toast is a tupple of title and text
             popup_toast(msg)
         if msg[0] == "photo":    # an image is just a string containing the call to display
-            showQRZImage(msg, qrz_label)        
+            showQRZImage(msg, qrz_label)
     except queue.Empty:
         pass
     root.after(100, process_queue)
@@ -827,18 +898,28 @@ def getValuesFromServer():
     slot.set(2)                         #current slot
     listbox.selection_set(0)            #current TG
     connected_msg.set("Connected to")    #current TG
-    
+
     # get values from Analog_Bridge (vox enable, delay and threshold) (not yet: sp level, mic level, audio devices)
     getVoxData()                        #vox enable, delay and threshold
     dongle_mode.set(1)                   #dongle mode enable
     mic_vol.set(50)                      #microphone level
     sp_vol.set(50)                       #speaker level
-    
-def updatedb():
+def atualizabd():
     bdfolder = pathlib.Path(__file__).parent
     url = 'https://ham-digital.org/status/users.json'
     urllib.request.urlretrieve(url, bdfolder/'users.json')
-    messagebox.showinfo("Database Update", "Update complete!")
+    messagebox.showinfo("Database Update", "Update completo!")
+def atualizarf():
+    bdfolder = pathlib.Path(__file__).parent
+    url = 'http://112.xreflector.es/database/pyUC.ini'
+    urllib.request.urlretrieve(url, bdfolder/'pyUC.ini')
+    messagebox.showinfo("Reflectores Update", "Update completo EDITA EL pyUC.ini Ahora!")
+    startfile(bdfolder/'pyUC.ini')
+def atualizarsf():
+    bdfolder = pathlib.Path(__file__).parent
+    url = 'http://112.xreflector.es/database/pyUC.py'
+    urllib.request.urlretrieve(url, bdfolder/'pyUC.py')
+    messagebox.showinfo("Software Update", "Update completo Ahora!Abre Y Cierra El Sotware!!")
 
 ###################################################################################
 # Update server data state to match GUI values
@@ -863,7 +944,7 @@ def sendValuesToServer():
 ###################################################################################
 def transmit(event=None):
     global ptt
-    
+
     if (transmit_enable == False) and (ptt == False):  # Do not allow transmit key if rx is active
         return
 
@@ -879,19 +960,21 @@ def transmit(event=None):
 def showPTTState(flag):
     global tx_start_time
     if ptt:
-        transmitButton.configure(highlightbackground='red')
+        transmitButton.configure(bg='Red')
         tx_start_time = time()
-        current_tx_value.set('{} -> {}'.format(my_call, getCurrentTG()))
+        current_tx_value.set('TX: {} -> {}'.format(my_call, getCurrentTG()))
+
         html_queue.put(my_call)     # Show my own pic when I transmit
         logging.info("PTT ON")
     else:
-        transmitButton.configure(highlightbackground='white')
+        transmitButton.configure(bg='lavender')
         if flag == 1:
             _date = strftime("%d/%m/%y", localtime(time()))
             _time = strftime("%H:%M:%S", localtime(time()))
             _duration = '{:.2f}'.format(time() - tx_start_time)
-            logList.see(logList.insert('', 'end', None, values=(_date, _time, my_call, '', str(slot.get()), str(getCurrentTGName()), '0.00%', str(_duration)+'s')))
+            logList.see(logList.insert('', 'end', None, values=(_date, _time, my_call, '', str(slot.get()), str(getCurrentTGName()), str(_duration)+'s')))
             current_tx_value.set(my_call)
+
         ipc_queue.put(empty_photo)  # clear the pic when in idle state
         logging.info("PTT OFF")
 
@@ -910,7 +993,8 @@ def makeTkVar( constructor, val, trace=None ):
 ###################################################################################
 def masterChanged(*args):
     fillTalkgroupList(master.get())     # fill the TG list with the items from the new mode
-    current_tx_value.set(my_call)          # Status bar back to idle
+    current_tx_value.set(my_call)	# Status bar back to idle
+
     ipc_queue.put(empty_photo)                   # Remove any picture from screen
     if (noTrace != True):               # ignore the event generated by setting the combo box (requestInfo side effect)
         logging.info("New mode selected: %s", master.get())
@@ -943,7 +1027,12 @@ def whiteLabel(parent, textVal):
 def tgDialog():
     d = MyDialog(root)
     root.wait_window(d.top)
-
+def adDialog():
+    t = addDialog(root)
+    root.wait_window(t.top)
+def delDialog():
+    t = remDialog(root)
+    root.wait_window(root)
 ###################################################################################
 # 
 ###################################################################################
@@ -951,7 +1040,6 @@ def makeModeFrame( parent ):
     modeFrame = LabelFrame(parent, text = "Server", pady = 5, padx = 5, bg = "white", bd = 1, relief = SUNKEN)
     ttk.Button(modeFrame, text="Read", command=getValuesFromServer).grid(column=1, row=1, sticky=W)
     ttk.Button(modeFrame, text="Write", command=sendValuesToServer).grid(column=1, row=2, sticky=W)
-    ttk.Button(modeFrame, text="Update DB", command=updatedb).grid(column=1, row=3, sticky=W)
     return modeFrame
 
 ###################################################################################
@@ -966,14 +1054,13 @@ def makeAudioFrame( parent ):
     ttk.Scale(audioFrame, from_=0, to=100, orient=HORIZONTAL, variable=sp_vol,
               command=lambda x: cb(sp_vol)).grid(column=2, row=2, sticky=(W,E), pady=1)
 
+    whiteLabel(audioFrame, "Input").grid(column=1, row=3, sticky=W, padx = 5)
     devices = listAudioDevices(True)
-    if len(devices) > 0:
-        whiteLabel(audioFrame, "Input").grid(column=1, row=3, sticky=W, padx = 5)
-        invar = StringVar(root)
-        invar.set(devices[0]) # default value
-        inp = OptionMenu(audioFrame, invar, *devices)
-        inp.config(width=20)
-        inp.grid(column=2, row=3, sticky=W)
+    invar = StringVar(root)
+    invar.set(devices[0]) # default value
+    inp = OptionMenu(audioFrame, invar, *devices)
+    inp.config(width=20)
+    inp.grid(column=2, row=3, sticky=W)
 
     whiteLabel(audioFrame, "Output").grid(column=1, row=4, sticky=W, padx = 5)
     devices = listAudioDevices(False)
@@ -1031,9 +1118,9 @@ def makeLogFrame( parent ):
 
     logList = ttk.Treeview(logFrame)
     logList.grid(column=1, row=2, sticky=W, columnspan=5)
-    
-    cols = ('Date', 'Time', 'Call', 'Name', 'Slot', 'TG', 'Loss', 'Duration')
-    widths = [85, 85, 85, 80, 55, 150, 70, 95]
+
+    cols = ('Date', 'Time', 'Callsign', 'Name', 'Slot', 'TG', 'Duration')
+    widths = [85, 85, 85, 80, 55, 80, 80]
     logList.config(columns=cols)
     logList.column("#0", width=1 )
     i = 0
@@ -1051,7 +1138,7 @@ def makeLogFrame( parent ):
 def makeTransmitFrame(parent):
     global transmitButton
     transmitFrame = Frame(parent, pady = 5, padx = 5, bg = "white", bd = 1)
-    transmitButton = Button(transmitFrame, text="Transmit", command=transmit, width = 40, state='disabled')
+    transmitButton = Button(transmitFrame, text="PTT", command=transmit, width = 25, state='disabled')
     transmitButton.grid(column=1, row=1, sticky=W)
     return transmitFrame
 
@@ -1066,9 +1153,10 @@ def clickQRZImage(event):
 
 def makeQRZFrame(parent):
     global qrz_label
-    qrzFrame = Frame(parent, bg = "white", bd = 1)
+
+    qrzFrame = Frame(parent, pady = 5, padx = 5, bg = "white", bd = 1)
     lx = Label(qrzFrame, text="", anchor=W, background = "white", cursor="hand2")
-    lx.grid(column=1, row=1, sticky=W)
+    lx.grid(column=1, row=2, sticky=W)
     qrz_label = lx
     qrz_label.bind("<Button-1>", clickQRZImage)
     return qrzFrame
@@ -1083,28 +1171,29 @@ def makeAppFrame( parent ):
     appFrame.rowconfigure(0, weight=1)
 
     makeModeSettingsFrame(appFrame).grid(column=0, row=1, sticky=(N,W), padx = 5)
-    makeQRZFrame(appFrame).grid(column=0, row=2, sticky=W, padx=5)
+    makeQRZFrame(appFrame).grid(column=0, row=2, sticky=W, columnspan=3, padx=5)
     makeGroupFrame(appFrame).grid(column=2, row=1, sticky=N, rowspan=2)
     makeTransmitFrame(appFrame).grid(column=0, row=3, sticky=N, columnspan=3, pady = 10)
-
+    #infoFrame(appFrame).grid(column=1, row=2, sticky=W, pady = 5)
     return appFrame
 
 ###################################################################################
 #
+
 ###################################################################################
 def makeModeSettingsFrame( parent ):
     ypad = 4
-    dmrgroup = LabelFrame(parent, text="MODE", padx=5, pady=ypad, bg = "white")
-    whiteLabel(dmrgroup, "Mode").grid(column=1, row=1, sticky=W, padx = 5, pady = ypad)
+    dmrgroup = LabelFrame(parent, text="Modo", padx=5, pady=ypad, bg = "white")
+    whiteLabel(dmrgroup, "Modo").grid(column=1, row=1, sticky=W, padx = 5, pady = ypad)
     w = OptionMenu(dmrgroup, master, *servers)
     w.grid(column=2, row=1, sticky=W, padx = 5, pady = ypad)
-
     whiteLabel(dmrgroup, "Repeater ID").grid(column=1, row=2, sticky=W, padx = 5, pady = ypad)
     Entry(dmrgroup, width = 20, textvariable = repeater_id).grid(column=2, row=2, pady = ypad)
-    whiteLabel(dmrgroup, "Subscriber ID").grid(column=1, row=3, sticky=W, padx = 5, pady = ypad)
+    whiteLabel(dmrgroup, "DMR ID").grid(column=1, row=3, sticky=W, padx = 5, pady = ypad)
     Entry(dmrgroup, width = 20, textvariable = subscriber_id).grid(column=2, row=3, pady = ypad)
 
     return dmrgroup
+
 
 ###################################################################################
 #
@@ -1127,10 +1216,12 @@ def makeVoxSettingsFrame( parent ):
 def makeIPSettingsFrame( parent ):
     ypad = 4
     ipSettings = LabelFrame(parent, text="Network", padx=5, pady = ypad, bg = "white")
-    Checkbutton(ipSettings, text = "Loopback", variable=loopback, command=lambda: cb(loopback), background = "white").grid(column=1, row=1, sticky=W)
-    whiteLabel(ipSettings, "IP Address").grid(column=1, row=2, sticky=W, padx = 5, pady = ypad)
+    Checkbutton(ipSettings, text="Loopback", variable=loopback, command=lambda: cb(loopback), background = "white").grid(column=1, row=1, sticky=W)
+    whiteLabel(ipSettings, "Server IP").grid(column=1, row=2, sticky=W, padx = 5, pady = ypad)
     Entry(ipSettings, width = 20, textvariable = ip_address).grid(column=2, row=2, pady = ypad)
     return ipSettings
+
+
 
 ###################################################################################
 #
@@ -1149,7 +1240,7 @@ def makeSettingsFrame( parent ):
 def makeAboutFrame( parent ):
     aboutFrame = Frame(parent, width = parent.winfo_width(), height = parent.winfo_height(),pady = 5, padx = 5, bg = "white", bd = 1, relief = SUNKEN)
     aboutText = "USRP Client (pyUC) Version " + UC_VERSION + "\n"
-    aboutText += "(C) 2019, 2020 DVSwitch, INAD.\n"
+    aboutText += "(C) 2019, 2020 DVSwitch\n"
     aboutText += "Created by Mike N4IRR and Steve N4IRS\n"
     aboutText += "pyUC comes with ABSOLUTELY NO WARRANTY\n\n"
     aboutText += "This software is for use on amateur radio networks only,\n"
@@ -1173,6 +1264,88 @@ def makeAboutFrame( parent ):
         logging.warning("no image:" + str(sys.exc_info()[1]))
     Message(aboutFrame, text=aboutText, background = "white", anchor=W, width=500).grid(column=2, row=1, sticky=NW, padx = 5, pady = 5)
     return aboutFrame
+def makeDMR(parent):
+    DMRFrame = Frame(parent, width=parent.winfo_width(), height=parent.winfo_height(), pady=5, padx=5, bg="white",
+                       bd=1, relief=SUNKEN)
+    makeDMRFrame(DMRFrame).grid(column=2, row=2, sticky=(N, W), padx=5, pady=5, columnspan=2)
+    makedbframe(DMRFrame).grid(column=2, row=1, sticky=(N,W), padx=5, pady=5, columnspan=2)
+    return DMRFrame
+
+def makeDMRFrame( parent ):
+
+
+    ypad = 2
+    dmrsettings = LabelFrame(parent, text="Brandmeister", padx=5, pady = ypad, bg = "white")
+    whiteLabel(dmrsettings, "Check node info").grid(column=1, row=1, sticky=W, padx=2, pady = ypad)
+    whiteLabel(dmrsettings, "Static talkgroup").grid(column=1, row=3, sticky=W, padx=2, pady=ypad)
+    whiteLabel(dmrsettings, "Brandmeister").grid(column=1, row=2, sticky=W, padx=2, pady=ypad)
+    ttk.Button(dmrsettings, text="Check", command=makehotspot).grid(column=2, row=1, sticky=(W, N))
+    ttk.Button(dmrsettings, text="Add", command=adDialog).grid(column=2, row=3, sticky=(W, N))
+    ttk.Button(dmrsettings, text="Del", command=delDialog).grid(column=3, row=3, sticky=(W, N))
+    ttk.Button(dmrsettings, text="Profile", command=openweb).grid(column=2, row=2, sticky=W)
+    ttk.Button(dmrsettings, text="DropCall", command=dropcall).grid(column=3, row=2, sticky=W)
+
+
+
+
+
+    return dmrsettings
+def makedbframe( parent ):
+    ypad = 2
+    dbsettings = LabelFrame(parent, text="Update", padx=5, pady=ypad, bg="white")
+
+    whiteLabel(dbsettings, "Actualizar cliente USRP modificado").grid(column=1, row=1, sticky=W, padx=2, pady=ypad)
+    whiteLabel(dbsettings, "Actualizar DMR ID Database").grid(column=1, row=2, sticky=W, padx=2, pady=ypad)
+    whiteLabel(dbsettings, "Actualizar Reflectores").grid(column=1, row=3, sticky=W, padx=2, pady=ypad)
+    ttk.Button(dbsettings, text="Actualizar", command=atualizarsf).grid(column=2, row=1, sticky=(W, N))
+    ttk.Button(dbsettings, text="Actualizar", command=atualizabd).grid(column=2, row=2, sticky=(W, N))
+    ttk.Button(dbsettings, text="Actualizar", command=atualizarf).grid(column=2, row=3, sticky=(W, N))
+    return dbsettings
+
+def makehotspot():
+
+    repid = my_call
+    repeaterid = str(repeater_id.get())
+    r = requests.get("https://api.brandmeister.network/v1.0/repeater/?action=LISTHS&call=" + repid)
+    data = r.json()
+
+    dict = data
+    ole = datetime.utcnow()
+
+    temph = ole.strftime('%Y-%m-%d %H')
+
+    alo = ole.hour
+
+
+    for tk in data:
+        repetidorid = str(tk['repeaterid'])
+        repetidorhora = str(tk['last_updated'])
+        if repeaterid in str(tk['repeaterid']):
+           #tgs = 'Node Information' + "\n"
+           tgs = "\n" + "Callsign: " + str(tk['callsign']) + "\n" + "ID: " + str(
+               tk['repeaterid'])
+
+           #tgs += "\n" + "Location: " + str(tk['city'])
+           if repetidorhora < temph:
+               tgs += "\n" + "Status: " + "Offline " + "\n" + "Last Online: " + str(
+                   tk['last_updated']) + "\n"
+           else:
+               tgs += "\n" + "Status: " + "Online "
+               tgs += "\n" + "Connected to: " + "BM" + str(tk['lastKnownMaster']) + "\n"
+           r.close()
+           r2 = requests.get("https://api.brandmeister.network/v1.0/repeater/?action=profile&q=" + repeaterid)
+           data2 = r2.json()
+
+           tgs += "\n" + 'Static Talkgroups:'
+           for tg in data2['staticSubscriptions']:
+               tgs += "\n" + "TG: " + str(tg['talkgroup'])
+
+
+
+           r2.close()
+
+
+           messagebox.showinfo("Node Information", tgs)
 
 ###################################################################################
 # Each second this function will be called, update the status bar
@@ -1186,14 +1359,38 @@ def update_clock(obj):
 #
 ###################################################################################
 def makeStatusBar( parent ):
-    w = 32
+    w = 25
     statusBar = Frame(parent, pady = 5, padx = 5)
     Label(statusBar, textvariable=connected_msg, anchor=W, width = w).grid(column=1, row=1, sticky=W)
-    Label(statusBar, textvariable=current_tx_value, anchor=CENTER, width = w).grid(column=2, row=1, sticky=N)
+    Label(statusBar, textvariable=current_tx_value, anchor=CENTER, width = 27).grid(column=2, row=1, sticky=N)
     obj = Label(statusBar, text="", anchor=E, width = w)
     obj.grid(column=3, row=1, sticky=E)
     root.after(1000, update_clock, obj)
     return statusBar
+
+
+def testeapi():
+    fin = open("pyUC.ini", "rt")
+    data = fin.read()
+    data = data.replace('api = yourapi', 'api = teste123456')
+    fin.close()
+
+    fin = open("pyUC.ini", "wt")
+    fin.write(data)
+    fin.close()
+
+def atestar():
+    apiline = 36
+    with open('pyUC.ini', 'r') as f:
+        lines = f.readlines()
+
+    with open('pyUC.ini', 'w') as f:
+        for i, line in enumerate(lines):
+            if i == apiline:
+                f.write(line)
+                f.write('api = teste;')
+            f.write(line)
+
 
 ###################################################################################
 # Read an int value from the ini file.  If an error or value is Default, return the 
@@ -1239,6 +1436,7 @@ def on_closing():
 root = Tk()
 root.title("USRP Client")
 root.resizable(width=FALSE, height=FALSE)
+
 root.bind('<Control_L>', transmit)
 nb = ttk.Notebook(root)     # A tabbed interface container
 
@@ -1267,7 +1465,7 @@ try:
     slot = makeTkVar(IntVar, config.get('DEFAULTS', "slot").split(None)[0])
     defaultServer = config.get('DEFAULTS', "defaultServer").split(None)[0]
     asl_mode = makeTkVar(IntVar, config.get('DEFAULTS', "aslMode").split(None)[0])
-
+    bmapi = config.get('DEFAULTS', "api").split(None)[0]
     in_index = readValue(config, 'DEFAULTS', 'in_index', None)
     out_index = readValue(config, 'DEFAULTS', 'out_index', None)
 
@@ -1279,7 +1477,7 @@ try:
     if validateConfigInfo() == False:
         logging.error('Please edit the configuration file and set it up correctly. Exiting...')
         os._exit(1)
-        
+
 except:
     logging.error("Config (ini) file error: " + str(sys.exc_info()[1]))
     sys.exit('Configuration file \''+config_file_name+'\' is not a valid configuration file! Exiting...')
@@ -1288,10 +1486,11 @@ servers = sorted(talk_groups.keys())
 master = makeTkVar(StringVar, defaultServer, masterChanged)
 connected_msg = makeTkVar(StringVar, "Connected to")
 current_tx_value = makeTkVar(StringVar, my_call)
-
+current_api = makeTkVar(StringVar, bmapi)
 # Add each frame to the "notebook" (tabs)
 nb.add(makeAppFrame( nb ), text='Main')
 nb.add(makeSettingsFrame( nb ), text='Settings')
+nb.add(makeDMR(nb), text='Mods')
 nb.add(makeAboutFrame( nb ), text='About')
 nb.grid(column=1, row=1)
 

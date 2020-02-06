@@ -387,7 +387,7 @@ def rxAudioStream():
                                                                             call.ljust(10), nome, rxslot, tg, '{:.2f}s'.format(time() - start_time))))
                         root.after(1000, logList.yview_moveto, 1)
                         current_tx_value.set(my_call)
-
+                        transmitButton.configure(text='PTT', bg='lavender')
                         ipc_queue.put(empty_photo)
                         transmit_enable = True  # Idle state, allow local transmit
                 lastKey = keyup
@@ -458,7 +458,7 @@ def rxAudioStream():
                             if call in y['callsign']:
                                 nome = str(y['name'])
                         current_tx_value.set('RX: {} {} -> {}'.format(nome, call, tg))
-
+                        transmitButton.configure(text='Receiving', bg='green')
 
                         logging.info('Begin TX: {} {} {} {} {}'.format(call, nome, rxslot, tg, mode))
 

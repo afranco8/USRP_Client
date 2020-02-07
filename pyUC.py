@@ -1240,7 +1240,7 @@ def makeSettingsFrame( parent ):
 def makeAboutFrame( parent ):
     aboutFrame = Frame(parent, width = parent.winfo_width(), height = parent.winfo_height(),pady = 5, padx = 5, bg = "white", bd = 1, relief = SUNKEN)
     aboutText = "USRP Client (pyUC) Version " + UC_VERSION + "\n"
-    aboutText += "(C) 2019, 2020 DVSwitch\n"
+    aboutText += "(C) 2019, 2020 DVSwitch, INAD.\n"
     aboutText += "Created by Mike N4IRR and Steve N4IRS\n"
     aboutText += "pyUC comes with ABSOLUTELY NO WARRANTY\n\n"
     aboutText += "This software is for use on amateur radio networks only,\n"

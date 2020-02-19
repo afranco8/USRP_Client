@@ -56,9 +56,9 @@ Instruções de instalação:
     pip3 install bs4 Pillow requests**  
     Editar pyUC.ini
 
-## Primeira execução
+## Primeira execução - Update
 
-Na primeira execução, é recomendado ir ao separador Definições -> Atualizar BD para fazer o download da base de dados mundial e visualizar no log o nome dos operadores com ID DMR.
+Depois de alterar o pyUC.ini com os seus detalhes, na primeira execução, é recomendado ir ao separador Mods -> "Atualização de registos DMR" -> Atualizar para fazer o download da base de dados mundial e visualizar no log o nome dos operadores com ID DMR. Foi adicionado um separador para verificar a informação do node. Foram também adicionadas as opções de adicionar/remover talkgroups estáticos e fazer drop call, sendo que estas funções requerem a adição da sua chave API do Brandmeister para controlo. (substituir "123" na linha api no ficheiro pyUC.ini com a sua chave).
 Esta é a única alteração realizada face ao script original dos autores.
 Todos os créditos para N4IRR e N4IRS
 

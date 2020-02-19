@@ -432,7 +432,7 @@ def rxAudioStream():
                             master.set(obj["tlv"]["ambe_mode"])
                         noTrace = False
                         logging.info(audio[:audio.find(b'\x00')].decode('ASCII'))
-                        connected_msg.set( "Ligado a " + obj["last_tune"] )
+                        connected_msg.set( "Connected to " + obj["last_tune"] )
                         selectTGByValue(obj["last_tune"])
                 else:
                     if audio[0] == TLV_TAG_SET_INFO:
@@ -692,7 +692,7 @@ def setRemoteTG( tg ):
             comma = ","
         sendRemoteControlCommandASCII(tgs)
         sendRemoteControlCommandASCII("txTg=0")
-        connected_msg.set( "Ligado a ")
+        connected_msg.set( "Connected to ")
         transmitButton.configure(state='disabled')
     else :
         sendRemoteControlCommandASCII("tgs=" + str(tg))
@@ -806,7 +806,7 @@ def connect():
     if regState == False:
         start()
     tg = getCurrentTG()
-    connected_msg.set( "Ligado a " + getCurrentTGName() )
+    connected_msg.set( "Connected to " + getCurrentTGName() )
 #    transmitButton.configure(state='normal')
 
     setRemoteNetwork(master.get())
@@ -817,7 +817,7 @@ def connect():
 # Mute all TS/TGs
 ###################################################################################
 def disconnect():
-    connected_msg.set( "DesLigado ")
+    connected_msg.set( "Disconnected ")
 #    transmitButton.configure(state='disabled')
 
 ###################################################################################
@@ -897,7 +897,7 @@ def getValuesFromServer():
     #   subscriber_id.set(3113043)           #DMR Subscriber radio ID
     slot.set(2)                         #current slot
     listbox.selection_set(0)            #current TG
-    connected_msg.set("Ligado a")    #current TG
+    connected_msg.set("Connected to")    #current TG
 
     # get values from Analog_Bridge (vox enable, delay and threshold) (not yet: sp level, mic level, audio devices)
     getVoxData()                        #vox enable, delay and threshold
@@ -1447,7 +1447,7 @@ except:
 
 servers = sorted(talk_groups.keys())
 master = makeTkVar(StringVar, defaultServer, masterChanged)
-connected_msg = makeTkVar(StringVar, "Ligado a")
+connected_msg = makeTkVar(StringVar, "Connected to")
 current_tx_value = makeTkVar(StringVar, my_call)
 current_api = makeTkVar(StringVar, bmapi)
 # Add each frame to the "notebook" (tabs)

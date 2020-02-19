@@ -57,8 +57,9 @@ Install instructions by platform:
     pip3 install bs4 Pillow requests**  
     Edit pyUC.ini
     
-## First Run
-After changing the pyUC.ini settings with you details, click on Settings -> Update BD and wait to download the User database so you cann see the operator names in the log.
+## First Run - Update
+After changing the pyUC.ini settings with you details, click on Mods -> "Update DMR ID Database" -> Update and wait to download the User database so you can see the operator names in the log.
+I also added a small modification to be able to check the node information and to add/remode statis TG's without having to PTT. There's a button to drop a call as well. To use these, you need to set your api KEY in the pyUC.ini (replace the 123 in the ini file with your own key).
 Thats the only change from the authors original script.
 All credits go to N4IRR & N4IRS
 
